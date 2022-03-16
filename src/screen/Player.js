@@ -107,7 +107,10 @@ class Player extends Component {
                         <Stack
                             sx={{
                                 width: "100%",
-                                backgroundColor: "background.paper"
+                                backgroundColor: "background.paper",
+                                [defaultTheme.breakpoints.down('md')]: {
+                                    display: "none",
+                                }
                             }}
                             spacing={2}
                             direction={"row"}
@@ -145,7 +148,7 @@ class Player extends Component {
                                 </Button>
                             </>
                             }
-                            <Stack component={"div"} id={"PREDISPOSING"}></Stack>
+                            <Stack sx={{maxWidth: "100%"}} component={"div"} id={"PREDISPOSING"}></Stack>
                             {reproducing && <Button
                                 color={"primary"}
                                 variant={"contained"}
