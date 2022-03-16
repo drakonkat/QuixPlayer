@@ -69,8 +69,32 @@ class Player extends Component {
             let magnet = window.location.search.substring(8, window.location.search.length);
             this.setState({
                 magnet: magnet
-            })
+            }, this.play)
         }
+    }
+
+    play = () => {
+        let {localClient, magnet} = this.state
+        localClient.add(magnet, null, (torrent) => {
+            // Torrents can contain many files. Let's use the .mp4 file
+            let files = torrent.files.filter((file) => {
+                return file.name.endsWith('.mp4') || file.name.endsWith('.m4v') || file.name.endsWith('.webm')
+            })
+            // Display the file by adding it to the DOM. Supports video, audio, image, etc. files
+            if (files && files.length > 0) {
+                files[0].appendTo('div#PREDISPOSING', {maxBlobLength: 2066664530000}, (err, elem) => {
+                    if (err) {
+                        this.setState({errorMessage: "Error reproducing file " + files[0].name})
+                    } else {
+                        this.setState({reproducing: true})
+                    }
+                })
+
+            } else {
+                torrent.destroy();
+                this.setState({errorMessage: "No streamable file"})
+            }
+        })
     }
 
     render() {
@@ -115,28 +139,7 @@ class Player extends Component {
                                     color={"primary"}
                                     variant={"contained"}
                                     startIcon={<PlayCircleOutlined/>}
-                                    onClick={() => {
-                                        localClient.add(magnet, null, (torrent) => {
-                                            // Torrents can contain many files. Let's use the .mp4 file
-                                            let files = torrent.files.filter((file) => {
-                                                return file.name.endsWith('.mp4') || file.name.endsWith('.m4v') || file.name.endsWith('.webm')
-                                            })
-                                            // Display the file by adding it to the DOM. Supports video, audio, image, etc. files
-                                            if (files && files.length > 0) {
-                                                files[0].appendTo('div#PREDISPOSING', {maxBlobLength: 2066664530000}, (err, elem) => {
-                                                    if (err) {
-                                                        this.setState({errorMessage: "Error reproducing file " + files[0].name})
-                                                    } else {
-                                                        this.setState({reproducing: true})
-                                                    }
-                                                })
-
-                                            } else {
-                                                torrent.destroy();
-                                                this.setState({errorMessage: "No streamable file"})
-                                            }
-                                        })
-                                    }}
+                                    onClick={this.play}
                                 >
                                     Play
                                 </Button>
