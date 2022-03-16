@@ -1,0 +1,24 @@
+stages:
+  - build
+  - deploy
+
+build:
+  image: node:16.8.0
+  stage: build
+  script:
+    - npm i
+    - npm run build
+  artifacts:
+    paths:
+      - build/
+
+pages:
+  image: alpine:latest
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none # Do not clone git repo
+  script:
+    - mv build public
+  artifacts:
+    paths:
+      - public
