@@ -1,7 +1,18 @@
 import React, {Component} from 'react';
-import {Button, Container, createTheme, CssBaseline, Stack, TextField, ThemeProvider, Typography} from "@mui/material";
+import {
+    Button,
+    CircularProgress,
+    Container,
+    createTheme,
+    CssBaseline,
+    Grid,
+    Stack,
+    TextField,
+    ThemeProvider,
+    Typography
+} from "@mui/material";
 import WebTorrent from "webtorrent";
-import {PlayCircleOutlined, StopCircleOutlined} from "@mui/icons-material";
+import {DownloadForOffline, PlayCircleOutlined, StopCircleOutlined} from "@mui/icons-material";
 
 const defaultTheme = createTheme();
 const options = {
@@ -52,18 +63,20 @@ const options = {
 class Player extends Component {
 
     state = {
+        files: null,
         theme: createTheme(options),
         localClient: new WebTorrent({destroyStoreOnDestroy: false}),
-        magnet: "",
+        magnet: "https://webtorrent.io/torrents/sintel.torrent",
         errorMessage: false,
-        reproducing: false
+        reproducing: false,
+        loading: false
     }
 
     componentDidMount() {
         let {localClient} = this.state;
         localClient.on("error", (error) => {
             console.error("Error validating torrent: ", error)
-            this.setState({errorMessage: "Invalid torrent/magnet/hash"})
+            this.setState({errorMessage: "Invalid torrent/magnet/hash", loading: false})
         })
         if (window.location.search && window.location.search.includes("?magnet=")) {
             let magnet = window.location.search.substring(8, window.location.search.length);
@@ -75,6 +88,7 @@ class Player extends Component {
 
     play = () => {
         let {localClient, magnet} = this.state
+        this.setState({loading: true})
         localClient.add(magnet, null, (torrent) => {
             // Torrents can contain many files. Let's use the .mp4 file
             let files = torrent.files.filter((file) => {
@@ -84,21 +98,24 @@ class Player extends Component {
             if (files && files.length > 0) {
                 files[0].appendTo('div#PREDISPOSING', {maxBlobLength: 2066664530000}, (err, elem) => {
                     if (err) {
-                        this.setState({errorMessage: "Error reproducing file " + files[0].name})
+                        this.setState({errorMessage: "Error reproducing file " + files[0].name, loading: false})
                     } else {
-                        this.setState({reproducing: true})
+                        torrent.on('download', (bytes) => {
+                            this.setState({files: torrent.files})
+                        })
+                        this.setState({reproducing: true, loading: false, files: torrent.files})
                     }
                 })
 
             } else {
                 torrent.destroy();
-                this.setState({errorMessage: "No streamable file"})
+                this.setState({errorMessage: "No streamable file", files: null})
             }
         })
     }
 
     render() {
-        let {theme, magnet, localClient, errorMessage, reproducing} = this.state;
+        let {loading, theme, magnet, localClient, errorMessage, reproducing, files} = this.state;
         return (
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
@@ -120,7 +137,11 @@ class Player extends Component {
                             <Typography variant={"h1"} color={"primary"}>Quix Player</Typography>
                         </Stack>
                         <Stack alignItems={"center"} spacing={2}>
-                            {!reproducing && <>
+                            {loading && <>
+                                <Typography variant={"h4"}>Loading...</Typography>
+                                <CircularProgress variant={"indeterminate"}/>
+                            </>}
+                            {!reproducing && !loading && <>
                                 <Typography variant={"h4"}>Stream torrent directly in your browser</Typography>
                                 <TextField
                                     id="magnet"
@@ -149,14 +170,49 @@ class Player extends Component {
                             </>
                             }
                             <Stack sx={{maxWidth: "100%"}} component={"div"} id={"PREDISPOSING"}></Stack>
+                            {files && <Grid container
+                                            justifyContent="center"
+                                            alignItems="center"
+                                            spacing={2}
+                            >
+                                {files.map(file => {
+                                    return <Grid item>
+                                        <Button disabled={file.progress < 1} onClick={() => {
+                                            file.getBlobURL((err, url) => {
+                                                if (err) {
+                                                    console.error("Error downloading file: ", err)
+                                                }
+                                                let link = document.createElement("a");
+                                                link.href = url;
+                                                link.download = file.name;
+                                                document.body.appendChild(link);
+                                                link.dispatchEvent(
+                                                    new MouseEvent('click', {
+                                                        bubbles: true,
+                                                        cancelable: true,
+                                                        view: window
+                                                    })
+                                                );
+                                                document.body.removeChild(link);
+                                            })
+                                        }} variant={"contained"} color={"primary"}
+                                                endIcon={<DownloadForOffline/>}>
+                                            {file.name} ({Math.round(file.progress * 100)}%)
+                                        </Button>
+                                    </Grid>
+                                })
+                                }
+                            </Grid>}
                             {reproducing && <Button
                                 color={"primary"}
                                 variant={"contained"}
                                 startIcon={<StopCircleOutlined/>}
                                 onClick={() => {
-                                    localClient.remove(magnet)
+                                    localClient.torrents.forEach((torrent) => {
+                                        localClient.remove(torrent.infoHash)
+                                    })
                                     document.getElementById("PREDISPOSING").innerHTML = "";
-                                    this.setState({reproducing: false})
+                                    this.setState({reproducing: false, files: null})
                                 }}
                             >
                                 Cancel
