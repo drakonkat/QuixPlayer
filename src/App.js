@@ -6,7 +6,7 @@ import Player from "./screen/Player";
 
 function App() {
   return (
-    <Player/>
+    <Player key={"UNIQUE-ID"}/>
   );
 }
 
