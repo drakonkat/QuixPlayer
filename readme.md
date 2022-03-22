@@ -1,5 +1,5 @@
-[//]: # (![QPlayer]&#40;https://gitlab.com/tndsite/quix-player/raw/master/public/logo512.png&#41;)
-#Qplayer
+![QPlayer](https://gitlab.com/tndsite/quix-player/raw/master/src/asset/logo.svg)
+
 
 **QPlayer** is a site where anyone can stream or download torrents directly from their browser. (Only specific file format is supported by the web player, some file require to be downloaded to be played in the browser)
 
