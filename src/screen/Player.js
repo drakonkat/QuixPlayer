@@ -22,6 +22,7 @@ import {
     PlayCircleOutlined,
     StopCircleOutlined
 } from "@mui/icons-material";
+import logo from '../asset/logo.svg'
 
 
 const round = (input) => {
@@ -182,14 +183,16 @@ class Player extends Component {
                                 backgroundColor: "background.paper",
                                 [defaultTheme.breakpoints.down('md')]: {
                                     display: "none",
-                                }
+                                },
+                                padding: "10px"
                             }}
                             spacing={2}
                             direction={"row"}
                             alignItems={"center"}
                             justifyContent={"center"}>
-                            <PlayCircleOutlined sx={{fontSize: 70}} color={"primary"}/>
-                            <Typography variant={"h1"} color={"primary"}>Quix Player</Typography>
+                            {/*<PlayCircleOutlined sx={{fontSize: 70}} color={"primary"}/>*/}
+                            {/*<Typography variant={"h1"} color={"primary"}>Quix Player</Typography>*/}
+                            <img style={{height:"100px"}} src={logo} alt="Logo"/>
                         </Stack>
                         <Stack key={"THIRD-ELEMENT"} alignItems={"center"} spacing={2}>
                             {loading && <>
