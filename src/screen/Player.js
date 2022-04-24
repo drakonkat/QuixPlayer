@@ -97,9 +97,20 @@ const options = {
 const trackers = ['wss://tracker.btorrent.xyz', 'wss://tracker.openwebtorrent.com', 'wss://tracker.quix.cf']
 
 const rtcConfig = {
-    'iceServers': [
+    "iceServers": [
         {
-            'urls': ['stun:stun.l.google.com:19305', 'stun:stun1.l.google.com:19305']
+            "urls": "stun:23.21.150.121"
+        },
+        {
+            urls: [
+                'stun:stun.l.google.com:19302',
+                'stun:global.stun.twilio.com:3478'
+            ]
+        },
+        {
+            "username": "admin",
+            "credential": "Password1!",
+            "urls": "turn:185.149.22.163:3478"
         }
     ]
 }
@@ -192,7 +203,7 @@ class Player extends Component {
                             justifyContent={"center"}>
                             {/*<PlayCircleOutlined sx={{fontSize: 70}} color={"primary"}/>*/}
                             {/*<Typography variant={"h1"} color={"primary"}>Quix Player</Typography>*/}
-                            <img style={{height:"100px"}} src={logo} alt="Logo"/>
+                            <img style={{height: "100px"}} src={logo} alt="Logo"/>
                         </Stack>
                         <Stack key={"THIRD-ELEMENT"} alignItems={"center"} spacing={2}>
                             {loading && <>
@@ -301,7 +312,8 @@ class Player extends Component {
                                 Cancel
                             </Button>
                                 {downloadSpeed &&
-                                    <Chip icon={<Downloading />} color={"primary"} label={"Download speed " + downloadSpeed} variant="outlined"/>}
+                                    <Chip icon={<Downloading/>} color={"primary"}
+                                          label={"Download speed " + downloadSpeed} variant="outlined"/>}
                             </Stack>}
                         </Stack>
                     </Stack>

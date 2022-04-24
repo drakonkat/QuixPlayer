@@ -11,6 +11,8 @@ build:
   artifacts:
     paths:
       - build/
+  only:
+    - main
 
 pages:
   image: alpine:latest
@@ -22,3 +24,5 @@ pages:
   artifacts:
     paths:
       - public
+  only:
+    - main
