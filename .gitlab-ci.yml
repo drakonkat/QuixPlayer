@@ -12,7 +12,7 @@ build:
     paths:
       - build/
   only:
-    - main
+    - master
 
 pages:
   image: alpine:latest
@@ -25,4 +25,4 @@ pages:
     paths:
       - public
   only:
-    - main
+    - master
