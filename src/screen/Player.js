@@ -94,7 +94,7 @@ const options = {
         },
     },
 };
-const trackers = ['wss://tracker.btorrent.xyz', 'wss://tracker.openwebtorrent.com', 'wss://tracker.quix.cf']
+const trackers = ['wss://tracker.btorrent.xyz', 'wss://tracker.openwebtorrent.com', 'wss://tracker.quix.cf', 'wss://tracker.crawfish.cf']
 
 const rtcConfig = {
     "iceServers": [
@@ -111,6 +111,11 @@ const rtcConfig = {
             "username": "admin",
             "credential": "Password1!",
             "urls": "turn:185.149.22.163:3478"
+        },
+        {
+            "username": "admin",
+            "credential": "Password1!",
+            "urls": "turn:23.94.202.235:3478"
         }
     ]
 }
@@ -138,6 +143,9 @@ class Player extends Component {
     }
 
     componentDidMount() {
+        this.localClient.on("warning", (warning) => {
+            console.warn("Error torrent: ", warning)
+        });
         this.localClient.on("error", (error) => {
             console.error("Error validating torrent: ", error)
             this.setState({errorMessage: "Invalid torrent/magnet/hash", loading: false})
