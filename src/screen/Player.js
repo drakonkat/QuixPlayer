@@ -129,6 +129,14 @@ const trackerOpts = {
     rtcConfig: rtcConfig
 }
 
+function inIframe() {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
+    }
+}
+
 class Player extends Component {
 
     localClient = new WebTorrent({tracker: trackerOpts})
@@ -139,10 +147,29 @@ class Player extends Component {
         errorMessage: false,
         reproducing: false,
         loading: false,
-        downloadSpeed: null
+        downloadSpeed: null,
+        inIframe: inIframe()
     }
 
+
     componentDidMount() {
+
+        navigator.serviceWorker.register("sw.min.js")
+            .then((registration) => {
+                setTimeout(() => {
+                    console.log("Service worker registered, scope: ", navigator.serviceWorker.controller);
+                    try {
+                        this.localClient.loadWorker(navigator.serviceWorker.controller); // client.loadWorker
+                    } catch (e) {
+                        console.error("Error: ", e)
+                    }
+                }, 500)
+                // If we want to, we might do `location.reload();` so that we'd be controlled by it
+            })
+            .catch(function (error) {
+                console.log("Service worker registration failed: " + error.message);
+            });
+
         this.localClient.on("warning", (warning) => {
             console.warn("Error torrent: ", warning)
         });
@@ -159,11 +186,10 @@ class Player extends Component {
     }
 
     play = () => {
-        let {magnet, torrentFile} = this.state
+        let {magnet, torrentFile, inIframe} = this.state
         let input = magnet || torrentFile[0];
         this.setState({loading: true})
         this.localClient.add(input, torrentOpts, (torrent) => {
-            console.log("Torrent catched: ", torrent)
             torrent.on('download', (bytes) => {
                 this.setState({files: torrent.files, downloadSpeed: humanFileSize(torrent.downloadSpeed)})
             })
@@ -173,11 +199,15 @@ class Player extends Component {
             })
             // Display the file by adding it to the DOM. Supports video, audio, image, etc. files
             if (files && files.length > 0) {
-                files[0].appendTo('div#PREDISPOSING', {maxBlobLength: 2066664530000}, (err, elem) => {
+                let video = document.getElementById("PREDISPOSING")
+                files[0].renderTo(video, (err, elem) => {
                     if (err) {
                         this.setState({errorMessage: "Error reproducing file " + files[0].name, loading: false})
                     } else {
                         this.setState({reproducing: true, loading: false, files: torrent.files})
+                    }
+                    if (inIframe) {
+                        this.localClient.throttleDownload(0)
                     }
                 })
 
@@ -189,13 +219,23 @@ class Player extends Component {
     }
 
     render() {
-        let {loading, theme, magnet, errorMessage, reproducing, files, torrentFile, downloadSpeed} = this.state;
+        let {
+            loading,
+            theme,
+            magnet,
+            errorMessage,
+            reproducing,
+            files,
+            torrentFile,
+            downloadSpeed,
+            inIframe
+        } = this.state;
         return (
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
                 <Container maxWidth="false">
                     <Stack key={"FIRST-ELEMENT"} justifyContent={"center"} spacing={2}>
-                        <Stack
+                        {inIframe ? undefined : <Stack
                             key={"SECOND-ELEMENT"}
                             sx={{
                                 width: "100%",
@@ -209,10 +249,8 @@ class Player extends Component {
                             direction={"row"}
                             alignItems={"center"}
                             justifyContent={"center"}>
-                            {/*<PlayCircleOutlined sx={{fontSize: 70}} color={"primary"}/>*/}
-                            {/*<Typography variant={"h1"} color={"primary"}>Quix Player</Typography>*/}
                             <img style={{height: "100px"}} src={logo} alt="Logo"/>
-                        </Stack>
+                        </Stack>}
                         <Stack key={"THIRD-ELEMENT"} alignItems={"center"} spacing={2}>
                             {loading && <>
                                 <Typography variant={"h4"}>Loading (Due to the low number of users, the process can take
@@ -270,61 +308,84 @@ class Player extends Component {
                                 </Button>
                             </>
                             }
-                            <Stack key={"ELEMENT4"} sx={{maxWidth: "100%"}} component={"div"}
-                                   id={"PREDISPOSING"}></Stack>
-                            {files && <Grid container
-                                            justifyContent="center"
-                                            alignItems="center"
-                                            spacing={2}
-                            >
-                                {files.map(file => {
-                                    return <Grid id={file.name} key={file.name} item>
-                                        <Button disabled={file.progress < 1} onClick={() => {
-                                            file.getBlobURL((err, url) => {
-                                                if (err) {
-                                                    console.error("Error downloading file: ", err)
-                                                }
-                                                let link = document.createElement("a");
-                                                link.href = url;
-                                                link.download = file.name;
-                                                document.body.appendChild(link);
-                                                link.dispatchEvent(
-                                                    new MouseEvent('click', {
-                                                        bubbles: true,
-                                                        cancelable: true,
-                                                        view: window
-                                                    })
-                                                );
-                                                document.body.removeChild(link);
-                                            })
-                                        }} variant={"contained"} color={"primary"}
-                                                endIcon={<DownloadForOffline/>}>
-                                            {file.name} ({Math.round(file.progress * 100)}%)
-                                        </Button>
-                                    </Grid>
-                                })
-                                }
-                            </Grid>}
-                            {reproducing && <Stack spacing={2} direction={"row"}> <Button
-                                color={"primary"}
-                                variant={"contained"}
-                                startIcon={<StopCircleOutlined/>}
-                                onClick={() => {
-                                    this.localClient.torrents.forEach((torrent) => {
-                                        this.localClient.remove(torrent.infoHash)
-                                    })
-                                    document.getElementById("PREDISPOSING").innerHTML = "";
-                                    this.setState({reproducing: false, files: null, downloadSpeed: null})
+
+                            <video
+                                key={"ELEMENT4"}
+                                style={{maxWidth: "100%", display: (loading || !files) ? "none" : undefined}}
+                                id={"PREDISPOSING"}
+                                onPlay={() => {
+                                    if (inIframe) {
+                                        this.localClient.throttleDownload(-1)
+                                    }
                                 }}
-                            >
-                                Cancel
-                            </Button>
-                                {downloadSpeed &&
-                                    <Chip icon={<Downloading/>} color={"primary"}
-                                          label={"Download speed " + downloadSpeed} variant="outlined"/>}
-                            </Stack>}
+                                controls/>
+
+
+                            {/*<Stack key={"ELEMENT4"} sx={{maxWidth: "100%", display: loading ? "none" : undefined}}*/}
+                            {/*       component={"div"}*/}
+                            {/*       id={"PREDISPOSING"}/>*/}
+
+                            {!inIframe && <>
+                                {files && <Grid container
+                                                justifyContent="center"
+                                                alignItems="center"
+                                                spacing={2}
+                                >
+                                    {files.map(file => {
+                                        return <Grid id={file.name} key={file.name} item>
+                                            <Button disabled={file.progress < 1} onClick={() => {
+                                                file.getBlobURL((err, url) => {
+                                                    if (err) {
+                                                        console.error("Error downloading file: ", err)
+                                                    }
+                                                    let link = document.createElement("a");
+                                                    link.href = url;
+                                                    link.download = file.name;
+                                                    document.body.appendChild(link);
+                                                    link.dispatchEvent(
+                                                        new MouseEvent('click', {
+                                                            bubbles: true,
+                                                            cancelable: true,
+                                                            view: window
+                                                        })
+                                                    );
+                                                    document.body.removeChild(link);
+                                                })
+                                            }} variant={"contained"} color={"primary"}
+                                                    endIcon={<DownloadForOffline/>}>
+                                                {file.name} ({Math.round(file.progress * 100)}%)
+                                            </Button>
+                                        </Grid>
+                                    })
+                                    }
+                                </Grid>}
+                                {reproducing && <Stack spacing={2} direction={"row"}> <Button
+                                    color={"primary"}
+                                    variant={"contained"}
+                                    startIcon={<StopCircleOutlined/>}
+                                    onClick={() => {
+                                        this.localClient.torrents.forEach((torrent) => {
+                                            this.localClient.remove(torrent.infoHash)
+                                        })
+                                        document.getElementById("PREDISPOSING").innerHTML = "";
+                                        this.setState({reproducing: false, files: null, downloadSpeed: null})
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                    {downloadSpeed &&
+                                        <Chip icon={<Downloading/>} color={"primary"}
+                                              label={"Download speed " + downloadSpeed} variant="outlined"/>}
+                                </Stack>}
+                            </>}
                         </Stack>
                     </Stack>
+                    {/*{!inIframe && <iframe style={{*/}
+                    {/*    height: "100%",*/}
+                    {/*    width: "100%",*/}
+                    {/*    border: "none"*/}
+                    {/*}} src="http://localhost:3000?magnet=7ff17298cd8957ae6408d32fbb6559bd159a8dff"*/}
+                    {/*                      title="W3Schools Free Online Web Tutorials"></iframe>}*/}
                 </Container>
             </ThemeProvider>
         );
