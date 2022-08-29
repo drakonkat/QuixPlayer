@@ -285,8 +285,10 @@ class Player extends Component {
                                 height: inIframe ? "100%" : "auto"
                             }} key={"THIRD-ELEMENT"} alignItems={"center"} spacing={2}>
                             {loading && <>
-                                <Typography variant={"h4"}>Loading (Due to the low number of users, the process can take
-                                    several minutes)...</Typography>
+                                <Typography variant={"h4"}>
+                                    Caricamento del torrent (Potrebbe richiedere più tempo, in caso di pochi utenti
+                                    attivi)
+                                </Typography>
                                 <CircularProgress variant={"indeterminate"}/>
                             </>}
                             {!reproducing && !loading && <>
