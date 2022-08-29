@@ -88,7 +88,7 @@ const options = {
                     [defaultTheme.breakpoints.up('xs')]: {
                         paddingLeft: "0px",
                         paddingRight: "0px",
-                        paddingTop: "5px",
+                        paddingTop: "0px",
                     }
                 },
             },
