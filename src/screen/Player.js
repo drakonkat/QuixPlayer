@@ -23,6 +23,7 @@ import {
     StopCircleOutlined
 } from "@mui/icons-material";
 import logo from '../asset/logo.svg'
+import queryString from "query-string"
 
 
 const round = (input) => {
@@ -91,7 +92,7 @@ const options = {
                     }
                 },
             },
-        },
+        }
     },
 };
 const trackers = ['wss://tracker.btorrent.xyz', 'wss://tracker.openwebtorrent.com', 'wss://tracker.quix.cf', 'wss://tracker.crawfish.cf']
@@ -155,16 +156,16 @@ class Player extends Component {
     componentDidMount() {
 
         navigator.serviceWorker.register("sw.min.js")
-            .then((registration) => {
-                setTimeout(() => {
-                    console.log("Service worker registered, scope: ", navigator.serviceWorker.controller);
-                    try {
-                        this.localClient.loadWorker(navigator.serviceWorker.controller); // client.loadWorker
-                    } catch (e) {
-                        console.error("Error: ", e)
-                    }
-                }, 500)
-                // If we want to, we might do `location.reload();` so that we'd be controlled by it
+            .then((reg) => {
+                const worker = reg.active || reg.waiting || reg.installing
+                let checkState = (worker) => {
+                    return worker.state === 'activated' && this.localClient.loadWorker(worker, () => {
+                        console.log("Service worker registered, scope: ", navigator.serviceWorker.controller);
+                    })
+                }
+                if (!checkState(worker)) {
+                    worker.addEventListener('statechange', ({target}) => checkState(target))
+                }
             })
             .catch(function (error) {
                 console.log("Service worker registration failed: " + error.message);
@@ -178,17 +179,40 @@ class Player extends Component {
             this.setState({errorMessage: "Invalid torrent/magnet/hash", loading: false})
         })
         if (window.location.search && window.location.search.includes("?magnet=")) {
-            let magnet = window.location.search.substring(8, window.location.search.length);
+            const queryParams = queryString.parse(window.location.search)
+            let {magnet, fallbackUrl} = queryParams
             this.setState({
-                magnet: magnet
+                magnet: magnet, fallbackUrl
             }, this.play)
         }
     }
 
     play = () => {
-        let {magnet, torrentFile, inIframe} = this.state
+        let {magnet, torrentFile, inIframe, fallbackUrl} = this.state
         let input = magnet || torrentFile[0];
+        let video = document.getElementById("PREDISPOSING")
+
         this.setState({loading: true})
+        console.time()
+        if (inIframe) {
+            setTimeout(() => {
+                if (!video.src && inIframe && fallbackUrl) {
+                    this.setState({
+                        loading: false,
+                        reproducing: true,
+                        fallbackElement: <iframe
+                            src={fallbackUrl} style={{
+                            height: "100%",
+                            width: "100%",
+                            border: "none"
+                        }}
+                            allowFullScreen/>
+                    }, () => {
+                        this.localClient.remove(input);
+                    })
+                }
+            }, 45000)
+        }
         this.localClient.add(input, torrentOpts, (torrent) => {
             torrent.on('download', (bytes) => {
                 this.setState({files: torrent.files, downloadSpeed: humanFileSize(torrent.downloadSpeed)})
@@ -199,16 +223,16 @@ class Player extends Component {
             })
             // Display the file by adding it to the DOM. Supports video, audio, image, etc. files
             if (files && files.length > 0) {
-                let video = document.getElementById("PREDISPOSING")
                 files[0].renderTo(video, (err, elem) => {
+                    console.timeEnd();
                     if (err) {
                         this.setState({errorMessage: "Error reproducing file " + files[0].name, loading: false})
                     } else {
                         this.setState({reproducing: true, loading: false, files: torrent.files})
                     }
-                    if (inIframe) {
-                        this.localClient.throttleDownload(0)
-                    }
+                    // if (inIframe) {
+                    //     this.localClient.throttleDownload(0)
+                    // }
                 })
 
             } else {
@@ -228,13 +252,18 @@ class Player extends Component {
             files,
             torrentFile,
             downloadSpeed,
-            inIframe
+            inIframe,
+            fallbackElement
         } = this.state;
         return (
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
                 <Container maxWidth="false">
-                    <Stack key={"FIRST-ELEMENT"} justifyContent={"center"} spacing={2}>
+                    <Stack
+                        sx={{
+                            height: inIframe ? "100%" : "auto"
+                        }}
+                        key={"FIRST-ELEMENT"} justifyContent={"center"} spacing={2}>
                         {inIframe ? undefined : <Stack
                             key={"SECOND-ELEMENT"}
                             sx={{
@@ -251,7 +280,10 @@ class Player extends Component {
                             justifyContent={"center"}>
                             <img style={{height: "100px"}} src={logo} alt="Logo"/>
                         </Stack>}
-                        <Stack key={"THIRD-ELEMENT"} alignItems={"center"} spacing={2}>
+                        <Stack
+                            sx={{
+                                height: inIframe ? "100%" : "auto"
+                            }} key={"THIRD-ELEMENT"} alignItems={"center"} spacing={2}>
                             {loading && <>
                                 <Typography variant={"h4"}>Loading (Due to the low number of users, the process can take
                                     several minutes)...</Typography>
@@ -319,6 +351,7 @@ class Player extends Component {
                                     }
                                 }}
                                 controls/>
+                            {inIframe && fallbackElement && fallbackElement}
 
 
                             {/*<Stack key={"ELEMENT4"} sx={{maxWidth: "100%", display: loading ? "none" : undefined}}*/}
@@ -380,12 +413,13 @@ class Player extends Component {
                             </>}
                         </Stack>
                     </Stack>
-                    {/*{!inIframe && <iframe style={{*/}
-                    {/*    height: "100%",*/}
-                    {/*    width: "100%",*/}
-                    {/*    border: "none"*/}
-                    {/*}} src="http://localhost:3000?magnet=7ff17298cd8957ae6408d32fbb6559bd159a8dff"*/}
-                    {/*                      title="W3Schools Free Online Web Tutorials"></iframe>}*/}
+                    {/*{!inIframe && <iframe*/}
+                    {/*    style={{*/}
+                    {/*        height: "100%",*/}
+                    {/*        width: "100%",*/}
+                    {/*        border: "none"*/}
+                    {/*    }}*/}
+                    {/*    src="http://localhost:3000?magnet=7ff17298cd8957ae6408d32fbb6559bd159a8dff&fallbackUrl=https%3A%2F%2Fmega.nz%2Fembed%2F5coFBZDK%23ePKmKKncNH3dWOQe5vaAbCoOYotkpvdoHnJO-G1GYA8"/>}*/}
                 </Container>
             </ThemeProvider>
         );
