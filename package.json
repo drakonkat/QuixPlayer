@@ -1,6 +1,6 @@
 {
   "name": "quix-player",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "homepage": ".",
   "private": false,
   "dependencies": {
@@ -14,7 +14,6 @@
     "query-string": "^7.1.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-quix-loader": "^0.9.2",
     "react-scripts": "4.0.3",
     "web-vitals": "^0.2.4",
     "webtorrent": "^1.8.26",

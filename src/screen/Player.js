@@ -18,11 +18,12 @@ import WebTorrent from "webtorrent";
 import {
     DownloadForOffline,
     Downloading,
+    Favorite,
     FileUploadOutlined,
     PlayCircleOutlined,
     StopCircleOutlined
 } from "@mui/icons-material";
-import logo from '../asset/logo.svg'
+import logo from '../asset/default-nomargin.svg'
 import queryString from "query-string"
 
 
@@ -230,9 +231,9 @@ class Player extends Component {
                     } else {
                         this.setState({reproducing: true, loading: false, files: torrent.files})
                     }
-                    // if (inIframe) {
-                    //     this.localClient.throttleDownload(0)
-                    // }
+                    if (inIframe) {
+                        this.localClient.throttleDownload(10)
+                    }
                 })
 
             } else {
@@ -286,8 +287,8 @@ class Player extends Component {
                             }} key={"THIRD-ELEMENT"} alignItems={"center"} spacing={2}>
                             {loading && <>
                                 <Typography variant={"h4"}>
-                                    Caricamento del torrent (Potrebbe richiedere più tempo, in caso di pochi utenti
-                                    attivi)
+                                    Caricamento del torrent (In caso di pochi utenti attivi potrebbe richiedere più
+                                    tempo)
                                 </Typography>
                                 <CircularProgress variant={"indeterminate"}/>
                             </>}
@@ -355,16 +356,72 @@ class Player extends Component {
                                 controls/>
                             {inIframe && fallbackElement && fallbackElement}
 
+                            {inIframe && <>
+                                {files && <Grid container
+                                                justifyContent="space-between"
+                                                alignItems="center"
+                                                sx={{
+                                                    marginTop: "0 !important"
+                                                }}
+                                >
+                                    {files.map(file => {
+                                        return <Grid id={file.name} key={file.name} item sx={{
+                                            padding: "5px"
+                                        }}>
+                                            <Button disabled={file.progress < 1} size={"small"} onClick={() => {
+                                                file.getBlobURL((err, url) => {
+                                                    if (err) {
+                                                        console.error("Error downloading file: ", err)
+                                                    }
+                                                    let link = document.createElement("a");
+                                                    link.href = url;
+                                                    link.download = file.name;
+                                                    document.body.appendChild(link);
+                                                    link.dispatchEvent(
+                                                        new MouseEvent('click', {
+                                                            bubbles: true,
+                                                            cancelable: true,
+                                                            view: window
+                                                        })
+                                                    );
+                                                    document.body.removeChild(link);
+                                                })
+                                            }} variant={"contained"} color={"primary"}
+                                                    endIcon={<DownloadForOffline/>}>
+                                                {file.name} ({Math.round(file.progress * 100)}%)
+                                            </Button>
+                                        </Grid>
+                                    })
+                                    }
+                                    {downloadSpeed &&
+                                        <Grid id={"Speed"} item sx={{
+                                            padding: "5px"
+                                        }}>
+                                            <Chip
+                                                sx={{
+                                                    minWidth: "190px"
+                                                }}
+                                                icon={<Downloading/>}
+                                                color={"primary"}
+                                                label={"Download speed " + downloadSpeed} variant="outlined"/>
+                                        </Grid>}
+                                    {<Grid id={"Star github"} item sx={{
+                                        padding: "5px"
+                                    }}>
+                                        <Chip icon={<Favorite/>} color={"primary"} onClick={() => {
+                                            window.open("https://github.com/drakonkat/Crawfish", '_blank').focus();
+                                        }}
+                                              label={"Se ti piace il player torrent, segui CrawFish"}
+                                              variant="outlined"/>
+                                    </Grid>}
+                                </Grid>}
+                            </>}
 
-                            {/*<Stack key={"ELEMENT4"} sx={{maxWidth: "100%", display: loading ? "none" : undefined}}*/}
-                            {/*       component={"div"}*/}
-                            {/*       id={"PREDISPOSING"}/>*/}
 
                             {!inIframe && <>
                                 {files && <Grid container
                                                 justifyContent="center"
                                                 alignItems="center"
-                                                spacing={2}
                                 >
                                     {files.map(file => {
                                         return <Grid id={file.name} key={file.name} item>
@@ -419,7 +476,7 @@ class Player extends Component {
                     {/*    style={{*/}
                     {/*        height: "100%",*/}
                     {/*        width: "100%",*/}
-                    {/*        border: "none"*/}
+                    {/*        border: "2px solid red"*/}
                     {/*    }}*/}
                     {/*    src="http://localhost:3000?magnet=7ff17298cd8957ae6408d32fbb6559bd159a8dff&fallbackUrl=https%3A%2F%2Fmega.nz%2Fembed%2F5coFBZDK%23ePKmKKncNH3dWOQe5vaAbCoOYotkpvdoHnJO-G1GYA8"/>}*/}
                 </Container>

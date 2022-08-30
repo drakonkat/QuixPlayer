@@ -1,6 +1,6 @@
 {
-  "short_name": "QPlayer",
-  "name": "Quix Player",
+  "short_name": "CFPlayer",
+  "name": "CrawFish Player",
   "icons": [
     {
       "src": "playoutlined.ico",
