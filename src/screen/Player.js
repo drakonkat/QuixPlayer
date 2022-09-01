@@ -232,9 +232,6 @@ class Player extends Component {
                     } else {
                         this.setState({reproducing: true, loading: false, files: torrent.files})
                     }
-                    if (inIframe) {
-                        this.localClient.throttleDownload(10)
-                    }
                 })
 
             } else {
