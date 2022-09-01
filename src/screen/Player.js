@@ -24,7 +24,9 @@ import {
     StopCircleOutlined
 } from "@mui/icons-material";
 import logo from '../asset/default-nomargin.svg'
+import img1 from '../asset/img1.jpg'
 import queryString from "query-string"
+import {QuiXImg} from "react-quix-loader";
 
 
 const round = (input) => {
@@ -207,12 +209,13 @@ class Player extends Component {
                             width: "100%",
                             border: "none"
                         }}
+                            title={"fallback"}
                             allowFullScreen/>
                     }, () => {
                         this.localClient.remove(input);
                     })
                 }
-            }, 45000)
+            }, 20000)
         }
         this.localClient.add(input, torrentOpts, (torrent) => {
             torrent.on('download', (bytes) => {
@@ -343,6 +346,10 @@ class Player extends Component {
                                 </Button>
                             </>
                             }
+                            Small image:
+                            <QuiXImg style={{height: "200px", objectFit: "contain"}} src={img1}
+                                     infoHash={"befa0472c1d9fc266f0448f7b35076b4b29835c7"}/>
+
 
                             <video
                                 key={"ELEMENT4"}
