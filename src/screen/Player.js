@@ -24,9 +24,7 @@ import {
     StopCircleOutlined
 } from "@mui/icons-material";
 import logo from '../asset/default-nomargin.svg'
-import img1 from '../asset/img1.jpg'
 import queryString from "query-string"
-import {QuiXImg} from "react-quix-loader";
 
 
 const round = (input) => {
@@ -346,11 +344,6 @@ class Player extends Component {
                                 </Button>
                             </>
                             }
-                            Small image:
-                            <QuiXImg style={{height: "200px", objectFit: "contain"}} src={img1}
-                                     infoHash={"befa0472c1d9fc266f0448f7b35076b4b29835c7"}/>
-
-
                             <video
                                 key={"ELEMENT4"}
                                 style={{maxWidth: "100%", display: (loading || !files) ? "none" : undefined}}
@@ -395,7 +388,7 @@ class Player extends Component {
                                                 })
                                             }} variant={"contained"} color={"primary"}
                                                     endIcon={<DownloadForOffline/>}>
-                                                {file.name} ({Math.round(file.progress * 100)}%)
+                                                ({Math.round(file.progress * 100)}%)
                                             </Button>
                                         </Grid>
                                     })
