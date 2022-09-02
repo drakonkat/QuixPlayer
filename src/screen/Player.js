@@ -205,7 +205,8 @@ class Player extends Component {
                             src={fallbackUrl} style={{
                             height: "100%",
                             width: "100%",
-                            border: "none"
+                            border: "none",
+                            marginTop: 0
                         }}
                             title={"fallback"}
                             allowFullScreen/>
