@@ -96,7 +96,7 @@ const options = {
         }
     },
 };
-const trackers = ['wss://tracker.btorrent.xyz', 'wss://tracker.openwebtorrent.com', 'wss://tracker.quix.cf', 'wss://tracker.crawfish.cf']
+const trackers = ['wss://tracker.btorrent.xyz', 'wss://tracker.openwebtorrent.com', 'wss://tracker.crawfish.cf']
 
 const rtcConfig = {
     "iceServers": [
@@ -108,11 +108,6 @@ const rtcConfig = {
                 'stun:stun.l.google.com:19302',
                 'stun:global.stun.twilio.com:3478'
             ]
-        },
-        {
-            "username": "admin",
-            "credential": "Password1!",
-            "urls": "turn:185.149.22.163:3478"
         },
         {
             "username": "admin",
@@ -226,7 +221,7 @@ class Player extends Component {
             })
             // Display the file by adding it to the DOM. Supports video, audio, image, etc. files
             if (files && files.length > 0) {
-                files[0].renderTo(video, (err, elem) => {
+                files[0].streamTo(video, (err, elem) => {
                     console.timeEnd();
                     if (err) {
                         this.setState({errorMessage: "Error reproducing file " + files[0].name, loading: false})
